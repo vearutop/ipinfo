@@ -30,11 +30,19 @@ jobs:
           go install .
           ipinfo -disp-cloud-dir cloud-ip-ranges -output cloud.bin
 
+      - name: Get release
+        id: get_release
+        uses: bruceadams/get-release@v1.3.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Upload cloud.bin
         if: hashFiles('cloud.bin') != ''
         uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: "https://uploads.github.com/repos/vearutop/ipinfo/releases/272330670/assets{?name,label}"
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: ./cloud.bin
           asset_name: cloud.bin
           asset_content_type: application/octet-stream
