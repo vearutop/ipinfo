@@ -1,0 +1,40 @@
+name: Weekly Build and Update Latest Release
+
+on:
+  schedule:
+    - cron: '0 0 * * 1'  # Every Monday at 00:00 UTC. Change as needed (e.g., '0 0 * * 0' for Sunday).
+  workflow_dispatch:  # Optional: allows manual triggering from the GitHub UI
+  pull_request:
+
+jobs:
+  build-and-upload:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Checkout data
+        uses: actions/checkout@v4
+        with:
+          repository: 'disposable/cloud-ip-ranges'
+          path: cloud-ip-ranges
+
+      - name: Build artifact
+        run: |
+          go install .
+          ipinfo -disp-cloud-dir cloud-ip-ranges -output cloud.bin
+
+      - name: Upload linux_arm64.tar.gz
+        if: hashFiles('linux_arm64.tar.gz') != ''
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: "https://github.com/vearutop/ipinfo/releases/tag/index"
+          asset_path: ./cloud.bin
+          asset_name: cloud.bin
+          asset_content_type: application/octet-stream
