@@ -25,13 +25,13 @@ jobs:
           repository: 'disposable/cloud-ip-ranges'
           path: cloud-ip-ranges
 
-      - name: Build artifact
+      - name: Build indexes
         run: |
           go install .
           ipinfo -disp-cloud-dir cloud-ip-ranges -output cloud.bin
 
-      - name: Upload linux_arm64.tar.gz
-        if: hashFiles('linux_arm64.tar.gz') != ''
+      - name: Upload cloud.bin
+        if: hashFiles('cloud.bin') != ''
         uses: actions/upload-release-asset@v1
         with:
           upload_url: "https://github.com/vearutop/ipinfo/releases/tag/index"
