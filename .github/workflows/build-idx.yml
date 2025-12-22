@@ -34,7 +34,7 @@ jobs:
         if: hashFiles('cloud.bin') != ''
         uses: actions/upload-release-asset@v1
         with:
-          upload_url: "https://uploads.github.com/repos/vearutop/ipinfo/releases/2/assets{?name,label}"
+          upload_url: "https://uploads.github.com/repos/vearutop/ipinfo/releases/272330670/assets{?name,label}"
           asset_path: ./cloud.bin
           asset_name: cloud.bin
           asset_content_type: application/octet-stream
