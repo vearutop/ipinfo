@@ -19,15 +19,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install ipinfo
+        run: |
+          go install .
+
       - name: Checkout data
         uses: actions/checkout@v4
         with:
           repository: 'disposable/cloud-ip-ranges'
           path: cloud-ip-ranges
 
-      - name: Build indexes
+      - name: Build cloud
         run: |
-          go install .
           ipinfo -disp-cloud-dir cloud-ip-ranges -output cloud.bin
 
       - name: Upload cloud.bin
@@ -39,4 +42,52 @@ jobs:
           upload_url: "https://uploads.github.com/repos/vearutop/ipinfo/releases/272330670/assets{?name,label}"
           asset_path: ./cloud.bin
           asset_name: cloud.bin
+          asset_content_type: application/octet-stream
+
+      - name: Build ASN lite
+        run: |
+          wget https://git.io/GeoLite2-ASN.mmdb
+          ipinfo -mmdb GeoLite2-ASN.mmdb -mmdb-type asn -output asn-lite.bin
+
+      - name: Upload asn-lite.bin
+        if: hashFiles('asn-lite.bin') != ''
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: "https://uploads.github.com/repos/vearutop/ipinfo/releases/272330670/assets{?name,label}"
+          asset_path: ./asn-lite.bin
+          asset_name: asn-lite.bin
+          asset_content_type: application/octet-stream
+
+      - name: Build City lite
+        run: |
+          wget https://git.io/GeoLite2-City.mmdb
+          ipinfo -mmdb GeoLite2-City.mmdb -mmdb-type city -output city-lite.bin
+
+      - name: Upload city-lite.bin
+        if: hashFiles('city-lite.bin') != ''
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: "https://uploads.github.com/repos/vearutop/ipinfo/releases/272330670/assets{?name,label}"
+          asset_path: ./city-lite.bin
+          asset_name: city-lite.bin
+          asset_content_type: application/octet-stream
+
+      - name: Build Country lite
+        run: |
+          wget https://git.io/GeoLite2-Country.mmdb
+          ipinfo -mmdb GeoLite2-Country.mmdb -mmdb-type country -output country-lite.bin
+
+      - name: Upload country-lite.bin
+        if: hashFiles('country-lite.bin') != ''
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: "https://uploads.github.com/repos/vearutop/ipinfo/releases/272330670/assets{?name,label}"
+          asset_path: ./country-lite.bin
+          asset_name: country-lite.bin
           asset_content_type: application/octet-stream
