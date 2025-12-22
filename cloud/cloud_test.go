@@ -1,7 +1,6 @@
 package cloud_test
 
 import (
-	"fmt"
 	"runtime"
 	"testing"
 	"time"
@@ -17,25 +16,21 @@ func TestLoadCloudLocal(t *testing.T) {
 	tr.Metadata().BuildDate = time.Now()
 	tr.Metadata().Description = "github.com/disposable/cloud-ip-ranges"
 
-	dir := "../cloud-ip-ranges/"
+	dir := "testdata/"
 
 	err := cloud.LoadCloudLocal(tr, dir)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	println("nets:", tr.Len())
-	println("names:", tr.LenNames())
-	println("nodes:", tr.LenNodes())
+	assert.Equal(t, 38873, tr.Len())
+	assert.Equal(t, 38, tr.LenNames())
+	assert.Equal(t, 272358, tr.LenNodes())
 
 	ms := runtime.MemStats{}
 	runtime.ReadMemStats(&ms)
 
 	tr.Minimize()
 
-	fmt.Println(tr.Metadata())
-
-	println("nodes minimized:", tr.LenNodes())
+	assert.Equal(t, 86030, tr.LenNodes())
 
 	require.NoError(t, tr.SaveToFile("cloud.bin"))
 

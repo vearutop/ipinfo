@@ -1,3 +1,0 @@
-[submodule "cloud-ip-ranges"]
-	path = cloud-ip-ranges
-	url = https://github.com/disposable/cloud-ip-ranges.git
