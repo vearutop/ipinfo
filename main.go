@@ -83,7 +83,7 @@ func main() {
 		}
 
 		err := mmdb.Load(tr, *mmDB, func(o *mmdb.Options) {
-			o.PrintProgress = true
+			//o.PrintProgress = true
 
 			if nameOpt != nil {
 				nameOpt(o)

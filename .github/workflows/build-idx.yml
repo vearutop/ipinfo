@@ -22,15 +22,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Download latest stable version of tools from github.com/adjust/cli-tools.
-#      - name: Get Tools
-#        env:
-#          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        run: |
-#          curl -sLO https://github.com/cli/cli/releases/download/v2.83.2/gh_2.83.2_linux_amd64.tar.gz && tar xzvf gh_2.83.2_linux_amd64.tar.gz --strip-components 2 gh_2.83.2_linux_amd64/bin/gh
-#          gh_hash=$(git hash-object ./gh)
-#          [ "$gh_hash" == "ec51a408be010d8ea1466871d9070c5754ab70a1" ] || (echo "::error::unexpected hash for gh, possible tampering: $gh_hash" && exit 1)
-
       - name: Install ipinfo
         run: |
           go install .
@@ -41,59 +32,29 @@ jobs:
           repository: 'disposable/cloud-ip-ranges'
           path: cloud-ip-ranges
 
-      - name: Build cloud
+      - name: Cloud Providers
         run: |
           ipinfo -disp-cloud-dir cloud-ip-ranges -output cloud.bin
+          zstd cloud.bin
+          gh release upload --clobber index cloud.bin.zst
 
-      - name: Upload cloud.bin
-        if: hashFiles('cloud.bin') != ''
+      - name: ASN Lite
         run: |
-          gh release upload --clobber index cloud.bin
-
-      - name: Build ASN lite
-        run: |
-          wget https://git.io/GeoLite2-ASN.mmdb
+          wget -q https://git.io/GeoLite2-ASN.mmdb
           ipinfo -mmdb GeoLite2-ASN.mmdb -mmdb-type asn -output asn-lite.bin
+          zstd asn-lite.bin
+          gh release upload --clobber index asn-lite.bin.zst
 
-      - name: Upload asn-lite.bin
-        if: hashFiles('asn-lite.bin') != ''
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: "https://uploads.github.com/repos/vearutop/ipinfo/releases/272330670/assets{?name,label}"
-          asset_path: ./asn-lite.bin
-          asset_name: asn-lite.bin
-          asset_content_type: application/octet-stream
-
-      - name: Build City lite
+      - name: City Lite
         run: |
-          wget https://git.io/GeoLite2-City.mmdb
+          wget -q https://git.io/GeoLite2-City.mmdb
           ipinfo -mmdb GeoLite2-City.mmdb -mmdb-type city -output city-lite.bin
+          zstd city-lite.bin
+          gh release upload --clobber index city-lite.bin.zst
 
-      - name: Upload city-lite.bin
-        if: hashFiles('city-lite.bin') != ''
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: "https://uploads.github.com/repos/vearutop/ipinfo/releases/272330670/assets{?name,label}"
-          asset_path: ./city-lite.bin
-          asset_name: city-lite.bin
-          asset_content_type: application/octet-stream
-
-      - name: Build Country lite
+      - name: Country Lite
         run: |
-          wget https://git.io/GeoLite2-Country.mmdb
+          wget -q https://git.io/GeoLite2-Country.mmdb
           ipinfo -mmdb GeoLite2-Country.mmdb -mmdb-type country -output country-lite.bin
-
-      - name: Upload country-lite.bin
-        if: hashFiles('country-lite.bin') != ''
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: "https://uploads.github.com/repos/vearutop/ipinfo/releases/272330670/assets{?name,label}"
-          asset_path: ./country-lite.bin
-          asset_name: country-lite.bin
-          asset_content_type: application/octet-stream
+          zstd country-lite.bin
+          gh release upload --clobber index country-lite.bin.zst
