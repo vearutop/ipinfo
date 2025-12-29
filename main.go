@@ -82,9 +82,9 @@ func main() {
 			defer os.Remove(f.Name())
 		}
 
-		err := mmdb.Load(tr, *mmDB, func(o *mmdb.Options) {
-			//o.PrintProgress = true
+		log.Println("building index...")
 
+		err := mmdb.Load(tr, *mmDB, func(o *mmdb.Options) {
 			if nameOpt != nil {
 				nameOpt(o)
 			}
@@ -113,13 +113,14 @@ func main() {
 
 		tr := netrie.NewCIDRIndex()
 
+		log.Println("loading cloud networks...")
 		if err := cloud.LoadCloudLocal(tr, *dispDir); err != nil {
 			log.Fatal(err)
 		}
 
 		tr.Minimize()
-		println("nets:", tr.Len())
-		println("names:", tr.LenNames())
+		log.Println("nets:", tr.Len())
+		log.Println("names:", tr.LenNames())
 
 		err := tr.SaveToFile(*output)
 		if err != nil {
