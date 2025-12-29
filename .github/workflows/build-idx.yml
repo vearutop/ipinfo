@@ -40,21 +40,18 @@ jobs:
 
       - name: ASN Lite
         run: |
-          wget -q https://git.io/GeoLite2-ASN.mmdb
-          ipinfo -mmdb GeoLite2-ASN.mmdb -mmdb-type asn -output asn-lite.bin
+          ipinfo -mmdb https://git.io/GeoLite2-ASN.mmdb -mmdb-type asn -output asn-lite.bin
           zstd asn-lite.bin
           gh release upload --clobber index asn-lite.bin.zst
 
       - name: City Lite
         run: |
-          wget -q https://git.io/GeoLite2-City.mmdb
-          ipinfo -mmdb GeoLite2-City.mmdb -mmdb-type city -output city-lite.bin
+          ipinfo -mmdb https://git.io/GeoLite2-City.mmdb -mmdb-type city -output city-lite.bin
           zstd city-lite.bin
           gh release upload --clobber index city-lite.bin.zst
 
       - name: Country Lite
         run: |
-          wget -q https://git.io/GeoLite2-Country.mmdb
-          ipinfo -mmdb GeoLite2-Country.mmdb -mmdb-type country -output country-lite.bin
+          ipinfo -mmdb https://git.io/GeoLite2-Country.mmdb -mmdb-type country -output country-lite.bin
           zstd country-lite.bin
           gh release upload --clobber index country-lite.bin.zst
