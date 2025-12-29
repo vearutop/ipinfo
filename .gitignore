@@ -3,5 +3,4 @@
 /.vscode
 /bench-*.txt
 /vendor
-cloud.bin
-tor.bin
+*.bin
