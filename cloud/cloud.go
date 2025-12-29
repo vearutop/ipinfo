@@ -75,7 +75,15 @@ func LoadCloud(tr netrie.Adder) error {
 func LoadCloudLocal(tr netrie.Adder, dir string) error {
 	dir = path.Join(dir, "txt")
 
-	tr.Metadata().Description = "github.com/disposable/cloud-ip-ranges"
+	meta := tr.Metadata()
+	if meta.Description == "" {
+		meta.Description = "Cloud providers from github.com/disposable/cloud-ip-ranges"
+	}
+
+	if meta.Name == "" {
+		meta.Name = "Cloud providers"
+	}
+
 	tr.Metadata().BuildDate = time.Now().UTC()
 
 	entries, err := os.ReadDir(dir)
