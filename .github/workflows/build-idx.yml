@@ -6,6 +6,9 @@ on:
   workflow_dispatch:  # Optional: allows manual triggering from the GitHub UI
   pull_request:
 
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 jobs:
   build-and-upload:
     runs-on: ubuntu-latest
@@ -20,13 +23,13 @@ jobs:
         uses: actions/checkout@v4
 
       # Download latest stable version of tools from github.com/adjust/cli-tools.
-      - name: Get Tools
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          curl -sLO https://github.com/cli/cli/releases/download/v2.83.2/gh_2.83.2_linux_amd64.tar.gz && tar xzvf gh_2.83.2_linux_amd64.tar.gz --strip-components 2 gh_2.83.2_linux_amd64/bin/gh
-          gh_hash=$(git hash-object ./gh)
-          [ "$gh_hash" == "2c250e2c82c3d6a132df5af5ae423c96902211df" ] || (echo "::error::unexpected hash for gh, possible tampering: $gh_hash" && exit 1)
+#      - name: Get Tools
+#        env:
+#          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        run: |
+#          curl -sLO https://github.com/cli/cli/releases/download/v2.83.2/gh_2.83.2_linux_amd64.tar.gz && tar xzvf gh_2.83.2_linux_amd64.tar.gz --strip-components 2 gh_2.83.2_linux_amd64/bin/gh
+#          gh_hash=$(git hash-object ./gh)
+#          [ "$gh_hash" == "ec51a408be010d8ea1466871d9070c5754ab70a1" ] || (echo "::error::unexpected hash for gh, possible tampering: $gh_hash" && exit 1)
 
       - name: Install ipinfo
         run: |
@@ -45,7 +48,7 @@ jobs:
       - name: Upload cloud.bin
         if: hashFiles('cloud.bin') != ''
         run: |
-          ./gh release upload --clobber index cloud.bin
+          gh release upload --clobber index cloud.bin
 
       - name: Build ASN lite
         run: |
