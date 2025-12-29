@@ -25,31 +25,31 @@ jobs:
         run: |
           go install .
 
-      - name: Checkout data
+      - name: Checkout cloud providers repo
         uses: actions/checkout@v4
         with:
           repository: 'disposable/cloud-ip-ranges'
           path: cloud-ip-ranges
 
-      - name: Cloud Providers
+      - name: Cloud providers
         run: |
           ipinfo -disp-cloud-dir cloud-ip-ranges -output cloud.bin
           zstd cloud.bin
           gh release upload --clobber index cloud.bin.zst
 
-      - name: ASN Lite
+      - name: ASN lite
         run: |
           ipinfo -mmdb https://git.io/GeoLite2-ASN.mmdb -mmdb-type asn -output asn-lite.bin
           zstd asn-lite.bin
           gh release upload --clobber index asn-lite.bin.zst
 
-      - name: City Lite
+      - name: City lite
         run: |
           ipinfo -mmdb https://git.io/GeoLite2-City.mmdb -mmdb-type city -output city-lite.bin
           zstd city-lite.bin
           gh release upload --clobber index city-lite.bin.zst
 
-      - name: Country Lite
+      - name: Country lite
         run: |
           ipinfo -mmdb https://git.io/GeoLite2-Country.mmdb -mmdb-type country -output country-lite.bin
           zstd country-lite.bin
