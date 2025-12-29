@@ -1,10 +1,9 @@
-name: Weekly Build and Update Latest Release
+name: Weekly build and update IP DB indexes
 
 on:
   schedule:
-    - cron: '0 0 * * 1'  # Every Monday at 00:00 UTC. Change as needed (e.g., '0 0 * * 0' for Sunday).
-  workflow_dispatch:  # Optional: allows manual triggering from the GitHub UI
-  pull_request:
+    - cron: '1 10 * * 2'  # Every Tuesday at 01:10 UTC.
+  workflow_dispatch:
 
 env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

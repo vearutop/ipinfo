@@ -114,6 +114,7 @@ func main() {
 		tr := netrie.NewCIDRIndex()
 
 		log.Println("loading cloud networks...")
+
 		if err := cloud.LoadCloudLocal(tr, *dispDir); err != nil {
 			log.Fatal(err)
 		}
