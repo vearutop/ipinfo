@@ -164,6 +164,7 @@ func main() {
 	}
 
 	newLine := false
+	seen := make(map[string]bool)
 
 	for _, ip := range ips {
 		ips, err := net.LookupIP(ip)
@@ -172,6 +173,12 @@ func main() {
 		}
 
 		for _, ip := range ips {
+			if seen[ip.String()] {
+				continue
+			}
+
+			seen[ip.String()] = true
+
 			if newLine {
 				fmt.Println()
 			}
