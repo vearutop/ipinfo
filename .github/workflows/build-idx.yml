@@ -49,6 +49,12 @@ jobs:
           zstd city-lite.bin
           gh release upload --clobber index city-lite.bin.zst
 
+      - name: City location lite
+        run: |
+          ipinfo -mmdb https://git.io/GeoLite2-City.mmdb -mmdb-type city-loc -output city-loc-lite.bin
+          zstd city-loc-lite.bin
+          gh release upload --clobber index city-loc-lite.bin.zst
+
       - name: Country lite
         run: |
           ipinfo -mmdb https://git.io/GeoLite2-Country.mmdb -mmdb-type country -output country-lite.bin
