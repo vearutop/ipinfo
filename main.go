@@ -60,6 +60,8 @@ func main() {
 		switch *mmDBType {
 		case "city":
 			nameOpt = mmdb.CityCountryISOCode
+		case "city-loc":
+			nameOpt = mmdb.CityCountryISOCodeLoc
 		case "country":
 			nameOpt = mmdb.CountryISOCode
 		case "asn":

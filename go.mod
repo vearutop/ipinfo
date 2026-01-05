@@ -6,7 +6,7 @@ require (
 	github.com/bool64/dev v0.2.43
 	github.com/klauspost/compress v1.18.2
 	github.com/stretchr/testify v1.11.1
-	github.com/vearutop/netrie v0.1.4
+	github.com/vearutop/netrie v0.1.5
 )
 
 require (
