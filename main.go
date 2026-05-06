@@ -226,7 +226,7 @@ func defaultIdxs(refresh bool) ([]netrie.SafeIPLookuper, error) {
 		"https://github.com/vearutop/ipinfo/releases/download/index/asn-lite.bin.zst",
 		"https://github.com/vearutop/ipinfo/releases/download/index/city-lite.bin.zst",
 	} {
-		tmpName := path.Join(os.TempDir() + strings.TrimSuffix(path.Base(dbURL), ".zst"))
+		tmpName := path.Join(os.TempDir(), strings.TrimSuffix(path.Base(dbURL), ".zst"))
 
 		_, err := os.Stat(tmpName)
 		if errors.Is(err, os.ErrNotExist) || refresh {
