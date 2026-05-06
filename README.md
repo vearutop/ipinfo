@@ -102,6 +102,13 @@ ipinfo -mmdb GeoIP2-ISP.mmdb -mmdb-type asn -output asn.bin
 ipinfo -mmdb GeoIP2-City.mmdb -mmdb-type city -output cities.bin
 ```
 
+Or resolve directly from MMDB without building a netrie index:
+
+```
+ipinfo -mmdb GeoIP2-Anonymous-IP.mmdb 194.36.25.11
+{"ip":"194.36.25.11","is_anonymous":true,"is_anonymous_vpn":true,"is_hosting_provider":true}
+```
+
 and use by default with env var:
 
 ```
