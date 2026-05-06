@@ -1,3 +1,4 @@
+// Package internal keeps reusable code.
 package internal
 
 import (
@@ -14,6 +15,7 @@ import (
 	"github.com/vearutop/netrie"
 )
 
+// DefaultIdxs returns default IP lookuper indexes.
 func DefaultIdxs(refresh bool, inMem bool) ([]netrie.IPLookuper, error) {
 	var res []netrie.IPLookuper
 

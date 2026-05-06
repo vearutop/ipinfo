@@ -3,6 +3,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -143,7 +144,7 @@ func run(args []string, stdout io.Writer) error {
 
 	if *mmDB != "" {
 		if len(ips) == 0 {
-			return fmt.Errorf("at least one ip or host is required when using -mmdb without -output")
+			return errors.New("at least one ip or host is required when using -mmdb without -output")
 		}
 
 		return resolveMMDB(ips, *mmDB, stdout)
@@ -151,7 +152,7 @@ func run(args []string, stdout io.Writer) error {
 
 	if *dispDir != "" {
 		if *output == "" {
-			return fmt.Errorf("output file is required when using -disp-cloud-dir")
+			return errors.New("output file is required when using -disp-cloud-dir")
 		}
 
 		tr := netrie.NewCIDRIndex()
