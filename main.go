@@ -2,7 +2,7 @@
 package main
 
 import (
-	"errors"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -10,24 +10,32 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"path"
-	"path/filepath"
 	"strings"
 
-	"github.com/klauspost/compress/zstd"
+	"github.com/oschwald/maxminddb-golang"
 	"github.com/vearutop/ipinfo/cloud"
+	"github.com/vearutop/ipinfo/internal"
 	"github.com/vearutop/netrie"
 	"github.com/vearutop/netrie/mmdb"
 )
 
 func main() {
-	var idxs []netrie.SafeIPLookuper
+	if err := run(os.Args[1:], os.Stdout); err != nil {
+		log.Fatal(err)
+	}
+}
 
-	mmDB := flag.String("mmdb", "", "input MMDB (MaxMind GeoIP) file")
-	mmDBType := flag.String("mmdb-type", "", "mmdb type: city, country, asn, anon, conn")
-	dispDir := flag.String("disp-cloud-dir", "", "path to github.com/disposable/cloud-ip-ranges directory")
-	refresh := flag.Bool("refresh", false, "refresh local netrie index from github")
-	flag.Func("netrie", "path to netrie index file, multiple DBs can be provided with multiple flags\n"+
+func run(args []string, stdout io.Writer) error {
+	var idxs []netrie.IPLookuper
+
+	fs := flag.NewFlagSet("ipinfo", flag.ContinueOnError)
+	fs.SetOutput(stdout)
+
+	mmDB := fs.String("mmdb", "", "input MMDB (MaxMind GeoIP) file")
+	mmDBType := fs.String("mmdb-type", "", "mmdb type: city, country, asn, anon, conn")
+	dispDir := fs.String("disp-cloud-dir", "", "path to github.com/disposable/cloud-ip-ranges directory")
+	refresh := fs.Bool("refresh", false, "refresh local netrie index from github")
+	fs.Func("netrie", "path to netrie index file, multiple DBs can be provided with multiple flags\n"+
 		"by default found in IPINFO_DEFAULT_DB env var glob\n"+
 		"or downloaded from https://github.com/vearutop/ipinfo/releases/tag/index",
 		func(s string) error {
@@ -41,17 +49,19 @@ func main() {
 			return nil
 		})
 
-	output := flag.String("output", "", "output file for netrie built from mmdb/cloud index")
+	output := fs.String("output", "", "output file for netrie built from mmdb/cloud index")
 
-	flag.Parse()
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
 
-	ips := flag.Args()
+	ips := fs.Args()
 
 	if len(ips) == 0 && *mmDB == "" && *dispDir == "" && *output == "" {
-		fmt.Println("Usage: ipinfo [-mmdb <mmdb>] [-disp-cloud-dir <dir>] [-output <file>] [...ip|host]")
-		flag.PrintDefaults()
+		fmt.Fprintln(stdout, "Usage: ipinfo [-mmdb <mmdb>] [-disp-cloud-dir <dir>] [-output <file>] [...ip|host]")
+		fs.PrintDefaults()
 
-		return
+		return nil
 	}
 
 	if *mmDB != "" && *output != "" {
@@ -115,7 +125,7 @@ func main() {
 			}
 		})
 		if err != nil {
-			log.Fatal("build index:", err)
+			return fmt.Errorf("build index: %w", err)
 		}
 
 		log.Println("nets: ", tr.Len(), "names: ", tr.LenNames(), "nodes: ", tr.LenNodes())
@@ -125,15 +135,23 @@ func main() {
 
 		err = tr.SaveToFile(*output)
 		if err != nil {
-			log.Fatal("save file:", err)
+			return fmt.Errorf("save file: %w", err)
 		}
 
-		return
+		return nil
+	}
+
+	if *mmDB != "" {
+		if len(ips) == 0 {
+			return fmt.Errorf("at least one ip or host is required when using -mmdb without -output")
+		}
+
+		return resolveMMDB(ips, *mmDB, stdout)
 	}
 
 	if *dispDir != "" {
 		if *output == "" {
-			log.Fatal("output file is required when using -disp-cloud-dir")
+			return fmt.Errorf("output file is required when using -disp-cloud-dir")
 		}
 
 		tr := netrie.NewCIDRIndex()
@@ -141,7 +159,7 @@ func main() {
 		log.Println("loading cloud networks...")
 
 		if err := cloud.LoadCloudLocal(tr, *dispDir); err != nil {
-			log.Fatal(err)
+			return err
 		}
 
 		tr.Minimize()
@@ -150,28 +168,32 @@ func main() {
 
 		err := tr.SaveToFile(*output)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 
-		return
+		return nil
 	}
 
 	if len(idxs) == 0 {
-		dflt, err := defaultIdxs(*refresh)
+		dflt, err := internal.DefaultIdxs(*refresh, false)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 
 		idxs = dflt
 	}
 
+	return resolveIPs(ips, idxs, stdout)
+}
+
+func resolveIPs(ips []string, idxs []netrie.IPLookuper, stdout io.Writer) error {
 	newLine := false
 	seen := make(map[string]bool)
 
 	for _, ip := range ips {
 		ips, err := net.LookupIP(ip)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 
 		for _, ip := range ips {
@@ -182,110 +204,58 @@ func main() {
 			seen[ip.String()] = true
 
 			if newLine {
-				fmt.Println()
+				fmt.Fprintln(stdout)
 			}
 
-			fmt.Println(ip.String())
+			fmt.Fprintln(stdout, ip.String())
 
 			for _, idx := range idxs {
-				fmt.Printf("%s: %s\n", idx.Metadata().Name, idx.LookupIP(ip))
+				fmt.Fprintf(stdout, "%s: %s\n", idx.Metadata().Name, idx.LookupIP(ip))
 			}
 
 			newLine = true
 		}
 	}
+
+	return nil
 }
 
-func defaultIdxs(refresh bool) ([]netrie.SafeIPLookuper, error) {
-	var res []netrie.SafeIPLookuper
-
-	if env := os.Getenv("IPINFO_DEFAULT_DB"); env != "" {
-		fns, err := filepath.Glob(env)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, fn := range fns {
-			idx, err := netrie.OpenFile(fn)
-			if err != nil {
-				return nil, err
-			}
-
-			if idx.Metadata().Name == "" {
-				idx.Metadata().Name = strings.TrimSuffix(path.Base(fn), ".bin")
-			}
-
-			res = append(res, idx)
-		}
-
-		return res, nil
+func resolveMMDB(inputs []string, mmdbPath string, stdout io.Writer) error {
+	db, err := maxminddb.Open(mmdbPath)
+	if err != nil {
+		return err
 	}
 
-	for _, dbURL := range []string{
-		"https://github.com/vearutop/ipinfo/releases/download/index/cloud.bin.zst",
-		"https://github.com/vearutop/ipinfo/releases/download/index/asn-lite.bin.zst",
-		"https://github.com/vearutop/ipinfo/releases/download/index/city-lite.bin.zst",
-	} {
-		tmpName := path.Join(os.TempDir(), strings.TrimSuffix(path.Base(dbURL), ".zst"))
+	defer func() {
+		_ = db.Close()
+	}()
 
-		_, err := os.Stat(tmpName)
-		if errors.Is(err, os.ErrNotExist) || refresh {
-			log.Println("downloading", dbURL)
+	enc := json.NewEncoder(stdout)
 
-			req, err := http.NewRequest(http.MethodGet, dbURL, nil)
-			if err != nil {
-				return nil, err
-			}
-
-			resp, err := http.DefaultClient.Do(req)
-			if err != nil {
-				return nil, err
-			}
-
-			defer resp.Body.Close()
-
-			log.Println("saving to", tmpName)
-
-			f, err := os.Create(tmpName)
-			if err != nil {
-				return nil, err
-			}
-
-			var r io.Reader = resp.Body
-
-			if strings.HasSuffix(dbURL, ".zst") {
-				zr, err := zstd.NewReader(r)
-				if err != nil {
-					return nil, err
-				}
-
-				r = zr
-			}
-
-			if _, err := io.Copy(f, r); err != nil {
-				return nil, err
-			}
-
-			if err := f.Close(); err != nil {
-				return nil, err
-			}
-
-			if err := resp.Body.Close(); err != nil {
-				return nil, err
-			}
-		}
-
-		idx, err := netrie.OpenFile(tmpName)
+	for _, input := range inputs {
+		ips, err := net.LookupIP(input)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		if idx.Metadata().Name == "" {
-			idx.Metadata().Name = strings.TrimSuffix(strings.TrimSuffix(path.Base(dbURL), ".zst"), ".bin")
-		}
+		for _, ip := range ips {
+			var rec map[string]any
+			if err := db.Lookup(ip, &rec); err != nil {
+				return err
+			}
 
-		res = append(res, idx)
+			out := make(map[string]any, len(rec)+1)
+			out["ip"] = ip.String()
+
+			for k, v := range rec {
+				out[k] = v
+			}
+
+			if err := enc.Encode(out); err != nil {
+				return err
+			}
+		}
 	}
 
-	return res, nil
+	return nil
 }
